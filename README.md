@@ -84,6 +84,8 @@ Run against ~5 days of this network's own SSH/Telnet honeypot (1,304 sessions wi
 
 Flags: `honeypot-fingerprinting` on 1,220 sessions (a single probe tool), `reconnaissance` on 5.
 
+See **[docs/FINDINGS.md](docs/FINDINGS.md)** for the two observations behind these numbers (an LLM-agent doing credential recon, and a tool fingerprinting us *as* an LLM honeypot).
+
 The one `llm-agent` IP ran adaptive, error-guarded credential reconnaissance with per-command done markers over a paramiko connection — classified `llm-agent` at 0.90. That is the kind of rare, specific lead the tool is for; it is deliberately **not** a label it hands out freely.
 
 ## Limitations — please read
