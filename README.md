@@ -4,7 +4,7 @@
 
 A small, dependency-free Python library from the [Kotivahdit](https://kotivahdit.github.io) volunteer honeypot network (Finland). It reads the commands an attacker ran (and a few connection hints) and returns a classification plus the behavioural signals behind it. It never touches the attacker's system and runs no code against them — this is passive triage, not hack-back.
 
-> Status: **v0.1, experimental.** This is an explainable *heuristic baseline*, not a trained model. It is meant to be read, criticised and improved. The signal weights are hand-tuned on real honeypot captures; treat the output as a lead, not proof.
+> Status: **v0.2, experimental.** This is an explainable *heuristic baseline*, not a trained model. It is meant to be read, criticised and improved. The signal weights are hand-tuned on real honeypot captures; treat the output as a lead, not proof.
 
 ## Why
 
@@ -42,13 +42,14 @@ print(v)             # full explanation with every signal
 
 `commands` is a list of `(unix_timestamp, command_string)` tuples, or just command strings (you then lose the timing signals). Everything else is optional.
 
-### Cowrie logs
+### Honeypot logs
 
 ```bash
-python -m sessionkind.cli /path/to/cowrie.json*
+python -m sessionkind.cli /path/to/cowrie.json*                 # Cowrie
+python -m sessionkind.cli --beelzebub /path/to/beelzebub.json   # Beelzebub (LLM honeypot)
 ```
 
-reads [Cowrie](https://github.com/cowrie/cowrie) JSON logs, classifies each session and prints a summary.
+Reads [Cowrie](https://github.com/cowrie/cowrie) or [Beelzebub](https://github.com/mariocandela/beelzebub) JSON logs, classifies each session and prints a summary. Beelzebub runs many commands as separate *inline* (exec) sessions; these are regrouped per source IP (gap < 5 min).
 
 ## What it returns
 
@@ -73,16 +74,16 @@ reads [Cowrie](https://github.com/cowrie/cowrie) JSON logs, classifies each sess
 
 ## Validated on real data
 
-Run against ~5 days of this network's own SSH/Telnet honeypot (1,304 sessions with ≥2 commands):
+Run against this network's own honeypots (sessions with ≥2 commands, November 2026):
 
-| kind | sessions | distinct IPs |
+| kind | Cowrie SSH/Telnet (~6 days) | Beelzebub LLM honeypot (~1 day) |
 |---|---:|---:|
-| script / bot | 1,269 | 35 |
-| unknown | 21 | 5 |
-| human | 7 | 7 |
-| **llm-agent** | **7** | **1** |
+| script / bot | 1,551 (40 IPs) | 379 (32 IPs) |
+| unknown | 21 (5 IPs) | 0 |
+| human | 4 (4 IPs) | 0 |
+| **llm-agent** | **8 (1 IP)** | 0 |
 
-Flags: `honeypot-fingerprinting` on 1,220 sessions (a single probe tool), `reconnaissance` on 5.
+Most Beelzebub traffic is honeypot-fingerprinting probe tools and bots polling the same command thousands of times — exactly what an LLM honeypot attracts.
 
 See **[docs/FINDINGS.md](docs/FINDINGS.md)** for the two observations behind these numbers (an LLM-agent doing credential recon, and a tool fingerprinting us *as* an LLM honeypot).
 

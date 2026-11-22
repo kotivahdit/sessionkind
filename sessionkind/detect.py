@@ -100,6 +100,14 @@ def classify(commands, client_version=None, pty=None, pty_size=None, duration=No
     # an LLM agent varies commands based on what it sees (high uniqueness).
     nonempty = [c for c in cmds if c.strip()]
     uniq = (len(set(_norm_cmd(c) for c in nonempty)) / len(nonempty)) if nonempty else 0.0
+    is_library = bool(client_version and RE_LIB_CLIENT.search(client_version))
+
+    # 22.11.: the same few commands repeated many times = a polling bot (seen: Go clients
+    # re-running `uname` thousands of times on an LLM honeypot). Short != hand-typed.
+    if len(nonempty) >= 10 and uniq < 0.2:
+        score["script"] += 2.5
+        sig.append(Signal("repetitive-polling", "script", 2.5,
+                          f"{len(nonempty)} commands but only {uniq:.0%} distinct"))
 
     n_done = len(RE_DONE_MARKER.findall(text))
     n_probe = len(RE_PROBE.findall(text))
@@ -158,7 +166,7 @@ def classify(commands, client_version=None, pty=None, pty_size=None, duration=No
 
     interactive = sum(1 for c in cmds if c.strip()
                       and c.strip().split(" ")[0] in HUMAN_INTERACTIVE and len(c) < 40)
-    if interactive >= 2 and n_done == 0 and n_probe == 0:
+    if interactive >= 2 and n_done == 0 and n_probe == 0 and uniq >= 0.5 and not is_library:
         w = min(2.0, interactive * 0.5)
         score["human"] += w
         sig.append(Signal("interactive-commands", "human", round(w, 2),
@@ -171,7 +179,6 @@ def classify(commands, client_version=None, pty=None, pty_size=None, duration=No
         sig.append(Signal("typos", "human", min(1.5, typos * 0.7),
                           f"{typos} likely typo(s)"))
 
-    is_library = bool(client_version and RE_LIB_CLIENT.search(client_version))
     if client_version:
         if is_library:
             score["script"] += 0.7; score["llm-agent"] += 0.5

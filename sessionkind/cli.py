@@ -1,16 +1,20 @@
-"""sessionkind CLI: classify Cowrie sessions.  Usage: python -m sessionkind.cli <cowrie.json...>"""
+"""sessionkind CLI.  Usage: python -m sessionkind.cli [--beelzebub] <log.json...>   (default format: Cowrie)"""
 import sys, collections
 from .detect import classify
 from .cowrie import sessions_from_cowrie
+from .beelzebub import sessions_from_beelzebub
 
 
 def main(argv=None):
     argv = argv or sys.argv[1:]
     if not argv:
         print(__doc__); return 2
+    reader = sessions_from_cowrie
+    if "--beelzebub" in argv:
+        argv = [a for a in argv if a != "--beelzebub"]; reader = sessions_from_beelzebub
     tally = collections.Counter()
     shown = 0
-    for s in sessions_from_cowrie(argv):
+    for s in reader(argv):
         if len(s["commands"]) < 2:
             continue
         v = classify(s["commands"], s["client_version"], s["pty"], s["pty_size"], s["duration"])

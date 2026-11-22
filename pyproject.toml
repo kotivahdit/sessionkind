@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sessionkind"
-version = "0.1.0"
+version = "0.2.0"
 description = "Passively tell whether the operator behind an SSH/shell session is a human, a script, or an LLM-driven agent."
 readme = "README.md"
 requires-python = ">=3.9"

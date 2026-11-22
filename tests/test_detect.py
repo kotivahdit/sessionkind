@@ -32,6 +32,12 @@ def test_probe_battery_is_tool():
     assert v.kind == "script", v
     assert "honeypot-fingerprinting" in v.flags, v
 
+def test_repetitive_polling_is_script():
+    cmds = [(i*5.0, "uname -s -v -n -r -m" if i % 2 == 0 else "uname -m | awk '{printf $1}'") for i in range(40)]
+    v = classify(cmds, client_version="SSH-2.0-Go")
+    assert v.kind == "script", v
+
+
 if __name__ == "__main__":
     import traceback
     fns = [f for n,f in sorted(globals().items()) if n.startswith("test_")]
